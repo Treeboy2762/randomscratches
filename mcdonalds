@@ -1,0 +1,219 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <vector>
+#include <iomanip>
+using namespace std;
+bool loggedIn = false;
+string loggedAccount;
+
+// 유저객체. 아이디, 비밀번호, 돈, 주문이력(미구현) 이 포함되어야함
+
+class User{
+public:
+	User();
+	User(string id, string pass, int initialCharge);
+  string getID();
+  string getPass();
+
+private:
+	string userID;
+  string password;
+	int chargeAmount; //charge
+
+};
+
+User::User(string id, string pass, int initialCharge) {
+userID = id;
+password = pass;
+chargeAmount = initialCharge;
+}
+
+string User::getID() 
+{ 
+  return userID;
+}
+
+string User::getPass() 
+{ 
+  return password;
+}
+
+// 유저데이터베이스 클래스. 유저 객체를 모아두어 아이디를 검색하는데 사용.
+
+class UserDatabase {
+public:
+	UserDatabase();
+  void addUser(User);
+  void printUser();
+  int findUser(string);
+  User getUser(int);
+
+private:
+  vector<User> users;
+};
+
+UserDatabase::UserDatabase(){
+}
+
+void UserDatabase::addUser(User user) 
+{ 
+  users.push_back(user);
+}
+
+User UserDatabase::getUser(int key) 
+{ 
+  return users[key];
+}
+
+void UserDatabase::printUser() 
+{ 
+  
+  for(int i=0; i < users.size(); i++){
+    cout << users[i].getID() << endl;
+  }
+}
+
+int UserDatabase::findUser(string key) 
+{ 
+  for(int i=0; i < users.size(); i++){
+   if (key.compare(users[i].getID()) == 0)
+    return i;
+  }
+  return -1;
+}
+
+// 1번문제, 사인업
+
+void signUp(UserDatabase& db) {
+string inputID;
+string inputpass;
+int inputmoney;
+while(true) {
+  cout << "Input your ID :" << endl;
+  cin >> inputID;
+  if (inputID.compare("0") == 0)
+    return;
+  else if (db.findUser(inputID) != -1)
+    cout << "Duplicated user id" << endl << endl;
+  else
+    break;
+}
+
+cout << "Input your password :" << endl;
+cin >> inputpass;
+cout << "Input your total money :" << endl;
+cin >> inputmoney;
+
+db.addUser(User(inputID, inputpass, inputmoney));
+cout << "Welcome, " << inputID << endl;
+}
+
+// 2번문제, 로그인
+
+void login(UserDatabase& db) {
+  string inputID;
+  string inputpass;
+  string tempPass;
+  while(true) {
+    cout << "Input your ID(0-to main menu) : ";
+    cin >> inputID;
+    if (db.findUser(inputID) == -1)
+      cout << "ID is not existing" << endl;
+    else
+      break;
+  }
+
+  tempPass = db.getUser(db.findUser(inputID)).getPass();
+
+  while(true) {
+    cout << "Input your password : ";
+    cin >> inputpass;
+    if (inputpass.compare(tempPass) != 0)
+      cout << "Wrong Password!" << endl;
+    else
+      break;
+  }
+  cout << "Welcome, " << inputID << endl;
+  loggedIn = true;
+  loggedAccount = inputID;
+}
+
+
+void showMenu() {
+  cout << "----------Mcdonalds Menu----------" << endl;
+  cout << left << setw(28) << "1. Hamburger" << setw(6) << "- 1000" << endl;
+  cout << left << setw(28) << "2. Cheeseburger" << setw(6) << "- 1500" << endl;
+  cout << left << setw(28) << "3. Big Mac" << setw(6) << "- 3000" << endl;
+  cout << left << setw(28) << "4. Quarter Pounder Burger" << setw(6) << "- 4000" << endl;
+  cout << left << setw(28) << "5. Double Quarter Pounder" << setw(6) << "- 5000" << endl;
+  cout << left << setw(28) << "6. Fries" << setw(6) << "- 1500" << endl;
+  cout << left << setw(28) << "7. Chicken McNuggets" << setw(6) << "- 2000" << endl;
+  cout << left << setw(28) << "8. Coke" << setw(6) << "- 1500" << endl << endl;
+}
+int main(){
+  int x;
+  UserDatabase Database = UserDatabase();
+  while (true) { 
+    
+    cout << "-----------------------------------" << endl;
+    cout << "-----Mcdonalds Delivery System-----" << endl;
+    cout << "-----------------------------------" << endl;
+    cout << "1. Sign up" << endl;
+    cout << "2. login" << endl;
+    cout << "3. Show Menu" << endl;
+    cout << "4. Order" << endl;
+    cout << "5. Order condition" << endl;
+    cout << "6. Refund" << endl;
+    cout << "7. Logout" << endl;
+    cout << "0. Exit" << endl;
+    cout << "9. PrintUser (Debug!!)" << endl;
+    cout << "Select -> ";
+    cin >> x;
+    if (x == 0) {
+      break;
+    }
+    else if (x == 1) {
+      if (loggedIn) {
+        cout << "You are already logged in to " << loggedAccount << " account" << endl;
+        cout << "Return to main menu " << endl << endl;
+      }
+      else
+        signUp(Database);
+    }
+    else if (x == 2) {
+      if (loggedIn) {
+        cout << "You are already logged in to " << loggedAccount << " account" << endl;
+        cout << "Return to main menu " << endl << endl;
+      }
+      else
+        login(Database);
+    }
+    else if (x == 3) {
+      showMenu();
+    }
+    else if (x == 7) {
+      if (loggedIn) {
+        int input;
+        cout << "If you want to logout, Please enter 1 (0-to main menu) : " << endl;
+        cin >> input;
+        if (input == 1) {
+          loggedIn = false;
+          loggedAccount = "";
+          cout << "Successfully logged out" << endl;
+        }
+      }
+      else {
+        cout << "You have to login first" << endl;
+        cout << "Return to main menu " << endl << endl;
+      }
+    }
+    else if (x == 9) {
+      Database.printUser();
+    }
+    else
+      cout << "Choose from 0 to 7: ";
+
+  }
+}
+
