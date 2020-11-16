@@ -15,18 +15,23 @@ public:
     User(string id, string pass, int initialCharge);
     string getID();
     string getPass();
+    void addOrderHistory(pair<string, int> order);
+    void printOrderHistory();
+    int changebalance(int amount);
+    int getbalance();
 
 private:
     string userID;
     string password;
-    int chargeAmount; //charge
-
+    int balance; //charge
+    vector <pair<string, int>> orderHistory;
+    
 };
 
 User::User(string id, string pass, int initialCharge) {
     userID = id;
     password = pass;
-    chargeAmount = initialCharge;
+    balance = initialCharge;
 }
 
 string User::getID()
@@ -39,6 +44,30 @@ string User::getPass()
     return password;
 }
 
+void User::addOrderHistory(pair<string, int> order)
+{
+    orderHistory.push_back(order);
+}
+
+void User::printOrderHistory()
+{
+    cout << "Printing your order history..." << endl;
+    for (int i = 0; i < orderHistory.size(); i++) {
+      cout << orderHistory[i].first << orderHistory[i].second << endl;
+    }
+}
+
+int User::changebalance(int amount)
+{
+    balance = balance + amount;
+    return balance;
+}
+
+int User::getbalance()
+{
+    return balance;
+}
+
 // 유저데이터베이스 클래스. 유저 객체를 모아두어 아이디를 검색하는데 사용.
 
 class UserDatabase {
@@ -48,6 +77,7 @@ public:
     void printUser();
     int findUser(string);
     User getUser(int);
+    User getUser(string);
 
 private:
     vector<User> users;
@@ -66,11 +96,15 @@ User UserDatabase::getUser(int key)
     return users[key];
 }
 
+User UserDatabase::getUser(string key)
+{
+    return users[findUser(key)];
+}
+
 void UserDatabase::printUser()
 {
-
     for (int i = 0; i < users.size(); i++) {
-        cout << users[i].getID() << endl;
+        cout << "User no. " << i << ": " << users[i].getID() << "/" << users[i].getPass() << "/" << users[i].getbalance() << endl;
     }
 }
 
@@ -118,10 +152,13 @@ void login(UserDatabase& db) {
     while (true) {
         cout << "Input your ID(0-to main menu) : ";
         cin >> inputID;
-        if (db.findUser(inputID) == -1)
-            cout << "ID is not existing" << endl;
-        else
-            break;
+        if (db.findUser(inputID) == -1){
+            cout << "ID is not existing" << endl << endl;
+            return;
+        }
+        else {
+          break;
+        }   
     }
 
     tempPass = db.getUser(db.findUser(inputID)).getPass();
@@ -139,6 +176,7 @@ void login(UserDatabase& db) {
     loggedAccount = inputID;
 }
 
+// 3번문제, 쇼메뉴
 
 void showMenu() {
     cout << "----------Mcdonalds Menu----------" << endl;
@@ -152,21 +190,55 @@ void showMenu() {
     cout << left << setw(28) << "8. Coke" << setw(6) << "- 1500" << endl << endl;
 }
 
-void orderMenu() {
-    while (true) {
-        int menu, number;
-        vector <int> vPrice = { 1000,1500,3000,4000,5000,1500,2000,1500 };
-        vector <string> vName = { "Hamburger","Cheeseburger","Big Mac","Quarter Pounder Burger","Double Quarter Pounder","Fries","Chicken McNuggets","Coke" };
-        cout << "Select menu number (0-to main menu) : ";
-        cin >> menu;
+// 4번문제, 주문
+
+void orderMenu(UserDatabase& db) {
+  int total = 0;
+  while (true) {
+      int menu, number;
+
+      vector <int> vPrice = { 1000,1500,3000,4000,5000,1500,2000,1500 };
+      vector <string> vName = { "Hamburger","Cheeseburger","Big Mac","Quarter Pounder Burger","Double Quarter Pounder","Fries","Chicken McNuggets","Coke" };
+      vector <pair<string, int>> order;
+      
+
+      cout << "Select menu number (0-to main menu) : ";
+      cin >> menu;
+
+      if (menu == 0) {
+        for (int i = 0; i < order.size(); i++ ) {
+          db.getUser(loggedAccount).addOrderHistory(order[i]);
+        }
+        cout << "Your total purchase amount is " << total << endl;
+        cout << "Your balance is " << db.getUser(loggedAccount).changebalance(-1 * total) << endl;
+        cout << "Thanks~" << endl << endl;
+        return;
+      }
+
+      else {
+        menu--;
         cout << "How many '" << vName[menu] << "' do you want : ";
         cin >> number;
-        if (menu == 0) {
-            break;
-        }
-    }
-   
 
+        if (total + vPrice[menu] * number > db.getUser(loggedAccount).getbalance()) {
+          cout << "You don't have enough money!";
+        }
+
+        else {
+          order.push_back(make_pair(vName[menu], number)); // 여기에썼음
+          total += vPrice[menu] * number;
+          cout << "You ordered " << vName[menu] << " which cost " << vPrice[menu] * number << endl;
+        }
+
+      }
+
+  }
+
+}
+
+// 5번문제, 오더컨디션
+void orderCondition(UserDatabase& db) {
+  db.getUser(loggedAccount).printOrderHistory();
 }
 
 int main() {
@@ -186,7 +258,7 @@ int main() {
         cout << "6. Refund" << endl;
         cout << "7. Logout" << endl;
         cout << "0. Exit" << endl;
-        cout << "9. PrintUser (Debug!!)" << endl;
+        cout << "99. Print User Status (Debug!!)" << endl;
         cout << "Select -> ";
         cin >> x;
         if (x == 0) {
@@ -212,14 +284,21 @@ int main() {
             showMenu();
         }
         else if (x == 4) {
-            if (loggedIn != 1) {
+            if (loggedIn != true) {
                 cout << "You have to login first\n" << "Return to main menu\n\n";
             }
             else {
-                orderMenu();
+                orderMenu(Database);
             }
         }
-
+        else if (x == 5) {
+            if (loggedIn != true) {
+                cout << "You have to login first\n" << "Return to main menu\n\n";
+            }
+            else {
+                orderCondition(Database);
+            }
+        }
         else if (x == 7) {
             if (loggedIn) {
                 int input;
@@ -236,7 +315,7 @@ int main() {
                 cout << "Return to main menu " << endl << endl;
             }
         }
-        else if (x == 9) {
+        else if (x == 99) {
             Database.printUser();
         }
         else
